@@ -1,4 +1,4 @@
 .idea/
-./screen.sh
-./clipboard_utils
+screen.sh
+sftp_uploader
 config.ini

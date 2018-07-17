@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 	"flag"
-	"github.com/gen2brain/beeep"
 	"runtime"
 	"path"
+	"github.com/gen2brain/beeep"
 )
 
 func generateImageName(format string) string {
@@ -43,6 +43,21 @@ func loadConfig(cfgName string) (map[string]string, error) {
 	return data, nil
 }
 
+func notify(title, text string) {
+	log.Println(text)
+	if err := beeep.Notify(title, text, ""); err != nil{
+		panic(err)
+	}
+}
+
+func alertError(title, text string) {
+	log.Println(text)
+	if err := beeep.Alert(title, text, ""); err != nil{
+		panic(err)
+	}
+	os.Exit(1)
+}
+
 func main() {
 	var res = flag.Bool("r", false, "true - load from clipboard, 1 - load from stdin")
 	flag.Parse()
@@ -51,29 +66,27 @@ func main() {
 	// load configuration
 	config, err := loadConfig("./config.ini")
 	if err != nil {
-		fmt.Printf("Fail to read file: %v", err)
-		os.Exit(1)
+		alertError("Config error", "Fail to read file: " + err.Error())
 	}
 
 	// generate screen name
 	screenName := generateImageName(config["nameFormat"])
 
+	// get raw image from clipboard or stdin
 	var image []byte
 	if *res == false {
-		// get image
-		image, err = getImageFromClipboard()
-		if err != nil {
-			log.Fatal("Image not found in buffer")
-			os.Exit(1)
+		if image, err = getImageFromClipboard(); err != nil {
+			alertError("Image error", "Image not found in buffer")
 		}
 	} else {
-		image, err = getImageFromStdin()
+		if image, err = getImageFromStdin(); err != nil {
+			alertError("Image error", "Image not found in stdin")
+		}
 	}
 
+	// check that it is really image
 	if !isImage(image){
-		println(image)
-		log.Fatal("Not a image")
-		os.Exit(1)
+		alertError("Image error", "Input data not is image")
 	}
 
 	// create ssh connection
@@ -84,26 +97,25 @@ func main() {
 		config["password"],
 	)
 	if err != nil {
-		log.Fatalf("Failed to dial: %s", err)
+		alertError("Connection error", "Failed to dial: " + err.Error())
 	}
 
 	// create sftp connection
 	sftpConn, err := sftp.NewClient(connection)
 	if err != nil {
-		log.Fatal(err)
+		alertError("Connection error", err.Error())
 	}
 	defer sftpConn.Close()
 
+	// upload image
 	if saveImageOnServer(sftpConn, screenName, image) != nil {
 		log.Fatalf("Can't upload image: %s", err)
+		alertError("Connection error", "Can't upload image: " + err.Error())
 	}
 
 	// save link to clipboard
 	link := fmt.Sprintf("http://%s/%s/%s", config["host"], config["username"], screenName)
-	log.Println(link)
 	putTextToClipboard(link)
-	err = beeep.Notify("Uploaded", link, "assets/information.png")
-	if err != nil {
-		panic(err)
-	}
+
+	notify("Image uploaded", link)
 }

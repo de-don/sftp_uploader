@@ -1,4 +1,4 @@
 .idea/
 ./screen.sh
 ./clipboard_utils
-./config.ini
+config.ini

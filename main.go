@@ -8,9 +8,8 @@ import (
 	"os"
 	"time"
 	"flag"
-	"runtime"
-	"path"
 	"github.com/gen2brain/beeep"
+	"github.com/kardianos/osext"
 )
 
 func generateImageName(format string) string {
@@ -20,8 +19,12 @@ func generateImageName(format string) string {
 }
 
 func loadConfig(cfgName string) (map[string]string, error) {
-	_, filename, _, _ := runtime.Caller(1)
-	cfgName = path.Join(path.Dir(filename), cfgName)
+	executablePath, err := osext.ExecutableFolder()
+	if err != nil {
+		log.Fatal("Error: Couldn't determine working directory: " + err.Error())
+	}
+	// Set the working directory to the path the executable is located in.
+	os.Chdir(executablePath)
 
 
 	// load configuration

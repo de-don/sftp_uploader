@@ -1,21 +1,32 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"github.com/gen2brain/beeep"
 	"github.com/go-ini/ini"
+	"github.com/kardianos/osext"
 	"github.com/pkg/sftp"
 	"log"
+	"math/rand"
 	"os"
 	"time"
-	"flag"
-	"github.com/gen2brain/beeep"
-	"github.com/kardianos/osext"
 )
+
+const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func RandStringBytes(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
 
 func generateImageName(format string) string {
 	// generate screen name
 	t := time.Now()
-	return fmt.Sprintf("%s.png", t.Format(format))
+	return fmt.Sprintf("%s_%s.png", t.Format(format), RandStringBytes(4))
 }
 
 func loadConfig(cfgName string) (map[string]string, error) {
@@ -25,7 +36,6 @@ func loadConfig(cfgName string) (map[string]string, error) {
 	}
 	// Set the working directory to the path the executable is located in.
 	os.Chdir(executablePath)
-
 
 	// load configuration
 	cfg, err := ini.LoadSources(ini.LoadOptions{
@@ -48,28 +58,29 @@ func loadConfig(cfgName string) (map[string]string, error) {
 
 func notify(title, text string) {
 	log.Println(text)
-	if err := beeep.Notify(title, text, ""); err != nil{
+	if err := beeep.Notify(title, text, ""); err != nil {
 		panic(err)
 	}
 }
 
 func alertError(title, text string) {
 	log.Println(text)
-	if err := beeep.Alert(title, text, ""); err != nil{
+	if err := beeep.Alert(title, text, ""); err != nil {
 		panic(err)
 	}
 	os.Exit(1)
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	var res = flag.Bool("r", false, "true - load from clipboard, 1 - load from stdin")
 	flag.Parse()
-
 
 	// load configuration
 	config, err := loadConfig("./config.ini")
 	if err != nil {
-		alertError("Config error", "Fail to read file: " + err.Error())
+		alertError("Config error", "Fail to read file: "+err.Error())
 	}
 
 	// generate screen name
@@ -88,7 +99,7 @@ func main() {
 	}
 
 	// check that it is really image
-	if !isImage(image){
+	if !isImage(image) {
 		alertError("Image error", "Input data not is image")
 	}
 
@@ -100,7 +111,7 @@ func main() {
 		config["password"],
 	)
 	if err != nil {
-		alertError("Connection error", "Failed to dial: " + err.Error())
+		alertError("Connection error", "Failed to dial: "+err.Error())
 	}
 
 	// create sftp connection
@@ -113,7 +124,7 @@ func main() {
 	// upload image
 	if saveImageOnServer(sftpConn, screenName, image) != nil {
 		log.Fatalf("Can't upload image: %s", err)
-		alertError("Connection error", "Can't upload image: " + err.Error())
+		alertError("Connection error", "Can't upload image: "+err.Error())
 	}
 
 	// save link to clipboard

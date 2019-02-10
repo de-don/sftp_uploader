@@ -23,9 +23,9 @@ func createSshSession(host, port, username, password string) (*ssh.Client, error
 	return ssh.Dial("tcp", fmt.Sprintf("%s:%s", host, port), sshConfig)
 }
 
-func saveImageOnServer(sftpConn *sftp.Client, screenName string, data []byte) error {
+func saveImageOnServer(sftpConn *sftp.Client, uploadDirectory string, screenName string, data []byte) error {
 	// create new file
-	f, err := sftpConn.Create(screenName)
+	f, err := sftpConn.Create(uploadDirectory + "/" + screenName)
 	if err != nil {
 		return err
 	}

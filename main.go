@@ -35,7 +35,7 @@ func loadConfig(cfgName string) (map[string]string, error) {
 		log.Fatal("Error: Couldn't determine working directory: " + err.Error())
 	}
 	// Set the working directory to the path the executable is located in.
-	os.Chdir(executablePath)
+	_ = os.Chdir(executablePath)
 
 	// load configuration
 	cfg, err := ini.LoadSources(ini.LoadOptions{
@@ -47,11 +47,13 @@ func loadConfig(cfgName string) (map[string]string, error) {
 		return nil, err
 	}
 	data := map[string]string{
-		"username":   cfg.Section("credentials").Key("username").String(),
-		"password":   cfg.Section("credentials").Key("password").String(),
-		"host":       cfg.Section("server").Key("host").String(),
-		"port":       cfg.Section("server").Key("port").String(),
-		"nameFormat": cfg.Section("other").Key("name_pattern").String(),
+		"username":        cfg.Section("credentials").Key("username").String(),
+		"password":        cfg.Section("credentials").Key("password").String(),
+		"host":            cfg.Section("server").Key("host").String(),
+		"port":            cfg.Section("server").Key("port").String(),
+		"nameFormat":      cfg.Section("other").Key("name_pattern").String(),
+		"uploadDirectory": cfg.Section("other").Key("upload_directory").String(),
+		"urlPattern":      cfg.Section("other").Key("url_pattern").String(),
 	}
 	return data, nil
 }
@@ -122,14 +124,14 @@ func main() {
 	defer sftpConn.Close()
 
 	// upload image
-	if saveImageOnServer(sftpConn, screenName, image) != nil {
+	if saveImageOnServer(sftpConn, config["uploadDirectory"], screenName, image) != nil {
 		log.Fatalf("Can't upload image: %s", err)
 		alertError("Connection error", "Can't upload image: "+err.Error())
 	}
 
 	// save link to clipboard
-	link := fmt.Sprintf("http://%s/%s/%s", config["host"], config["username"], screenName)
-	putTextToClipboard(link)
+	link := fmt.Sprintf(config["urlPattern"], screenName)
+	_ = putTextToClipboard(link)
 
 	notify("Image uploaded", link)
 }

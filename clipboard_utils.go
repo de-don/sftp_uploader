@@ -1,9 +1,9 @@
 package main
 
 import (
-	"os/exec"
-	"os"
 	"io/ioutil"
+	"os"
+	"os/exec"
 )
 
 // Get image from clipboard

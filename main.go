@@ -15,6 +15,7 @@ import (
 
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+// Generate random string with n-length
 func RandStringBytes(n int) string {
 	b := make([]byte, n)
 	for i := range b {
@@ -23,12 +24,14 @@ func RandStringBytes(n int) string {
 	return string(b)
 }
 
+// Generate image name using the format and random salt
 func generateImageName(format string) string {
 	// generate screen name
 	t := time.Now()
 	return fmt.Sprintf("%s_%s.png", t.Format(format), RandStringBytes(4))
 }
 
+// Load configuration from ini-file and map this to internal structure
 func loadConfig(cfgName string) (map[string]string, error) {
 	executablePath, err := osext.ExecutableFolder()
 	if err != nil {
@@ -58,6 +61,7 @@ func loadConfig(cfgName string) (map[string]string, error) {
 	return data, nil
 }
 
+// Show the successful notification
 func notify(title, text string) {
 	log.Println(text)
 	if err := beeep.Notify(title, text, ""); err != nil {
@@ -65,6 +69,7 @@ func notify(title, text string) {
 	}
 }
 
+// Show the alert
 func alertError(title, text string) {
 	log.Println(text)
 	if err := beeep.Alert(title, text, ""); err != nil {

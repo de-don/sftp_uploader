@@ -129,8 +129,7 @@ func main() {
 	defer sftpConn.Close()
 
 	// upload image
-	if saveImageOnServer(sftpConn, config["uploadDirectory"], screenName, image) != nil {
-		log.Fatalf("Can't upload image: %s", err)
+	if err = saveImageOnServer(sftpConn, config["uploadDirectory"], screenName, image); err != nil {
 		alertError("Connection error", "Can't upload image: "+err.Error())
 	}
 

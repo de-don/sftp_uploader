@@ -29,6 +29,7 @@ func saveImageOnServer(sftpConn *sftp.Client, uploadDirectory string, screenName
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 	// write in new fle
 	if _, err := f.Write(data); err != nil {
 		return err
